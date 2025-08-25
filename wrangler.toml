@@ -7,4 +7,4 @@ pages_build_output_dir = "."
 # KV namespaces
 [[kv_namespaces]]
 binding = "SLINK_KV"
-id = "611bc46cbdf7421c94e4fe8dac213bf9"
+id = "633711c8e51f4d419c3d303cb933e987"
