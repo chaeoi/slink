@@ -61,8 +61,7 @@ value: 原始 Markdown
 .
 ├── assets/
 │   ├── css/                页面样式
-│   ├── js/                 浏览器端代码
-│   └── favicon.svg
+│   └── js/                 浏览器端代码
 ├── functions/
 │   ├── _lib/               服务端公共模块
 │   ├── [slug].js           动态路由

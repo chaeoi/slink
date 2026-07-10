@@ -46,7 +46,7 @@ elements.shortenForm.addEventListener("submit", async (event) => {
         customSlug: customSlug || undefined
     }, (data) => {
         showResult({
-            title: "短链接已创建",
+            title: "短链地址:",
             url: data.shortUrl,
             detail: data.originalUrl,
             createdAt: data.createdAt
@@ -67,7 +67,7 @@ elements.noteForm.addEventListener("submit", async (event) => {
 
     await submit(elements.noteButton, "/note", { title, content }, (data) => {
         showResult({
-            title: "Markdown 便签已创建",
+            title: "便签地址:",
             url: data.noteUrl,
             detail: `原始文件：${data.markdownUrl}`,
             createdAt: data.createdAt
