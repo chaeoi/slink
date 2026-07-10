@@ -1,133 +1,156 @@
-export async function onRequest(context) {
-    const { env, params } = context;
-    const slug = params.slug;
+import { SLUG_PATTERN } from "./_lib/slug.js";
+import {
+    readNoteMarkdown,
+    readNote,
+    readUrl
+} from "./_lib/storage.js";
 
-    if (!slug || slug.includes('.')) {
-        return new Response('Not Found', { status: 404 });
+const FONT_STYLESHEET = "https://registry.npmmirror.com/lxgw-wenkai-screen-web/1.522.0/files/style.css";
+const MARKED_SCRIPT = "https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.js";
+const PURIFY_SCRIPT = "https://cdn.jsdelivr.net/npm/dompurify@3.3.1/dist/purify.min.js";
+
+export async function onRequest(context) {
+    if (context.request.method !== "GET" && context.request.method !== "HEAD") {
+        return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+
+    const requestedSlug = String(context.params.slug || "");
+    const markdownRequest = requestedSlug.toLowerCase().endsWith(".md");
+    const slug = markdownRequest ? requestedSlug.slice(0, -3) : requestedSlug;
+
+    if (!SLUG_PATTERN.test(slug)) {
+        return notFound();
     }
 
     try {
-        // 首先尝试查找便签
-        let dataStr = await env.SLINK_KV.get(`note:${slug}`);
-        let isNote = false;
-        
-        if (dataStr) {
-            isNote = true;
-        } else {
-            // 如果不是便签，查找短链
-            dataStr = await env.SLINK_KV.get(`url:${slug}`);
-        }
-        
-        if (!dataStr) {
-            return Response.redirect('/', 302);
+        if (markdownRequest) {
+            return serveMarkdown(context.env, slug, context.request.method === "HEAD");
         }
 
-        const data = JSON.parse(dataStr);
-        
-        if (isNote) {
-            // 便签预览：更新访问统计并返回HTML页面
-            context.waitUntil(
-                env.SLINK_KV.put(`note:${slug}`, JSON.stringify({
-                    ...data,
-                    viewCount: (data.viewCount || 0) + 1,
-                    lastAccessed: new Date().toISOString()
-                })).catch(() => {
-                    console.warn(`Failed to update stats for note ${slug}`);
-                })
-            );
-
-            return new Response(generateNoteHTML(data), {
-                headers: { 'Content-Type': 'text/html; charset=utf-8' }
-            });
-        } else {
-            // 短链重定向：确保URL格式正确
-            let redirectUrl = data.originalUrl; 
-            if (!/^https?:\/\//i.test(redirectUrl)) {
-                redirectUrl = 'https://' + redirectUrl;
-            }
-            
-            // 异步更新访问统计
-            context.waitUntil(
-                env.SLINK_KV.put(`url:${slug}`, JSON.stringify({
-                    ...data,
-                    clickCount: (data.clickCount || 0) + 1,
-                    lastAccessed: new Date().toISOString()
-                })).catch(() => {
-                    console.warn(`Failed to update stats for ${slug}`);
-                })
-            );
-
-            return Response.redirect(redirectUrl, 302);
+        const note = await readNote(context.env, slug);
+        if (note) {
+            return serveNote(note);
         }
 
+        const link = await readUrl(context.env, slug);
+        if (link) {
+            return Response.redirect(link, 302);
+        }
+
+        return notFound();
     } catch (error) {
-        console.error('Redirect error:', error);
-        return Response.redirect('/', 302);
+        console.error(`Failed to resolve slug ${slug}:`, error);
+        return new Response("服务器暂时无法处理该请求", {
+            status: 500,
+            headers: { "Content-Type": "text/plain; charset=utf-8" }
+        });
     }
 }
 
-function generateNoteHTML(noteData) {
-    const title = noteData.title || '便签预览';
-    const content = noteData.content || '';
-    const createdAt = new Date(noteData.createdAt).toLocaleString('zh-CN');
-    const viewCount = noteData.viewCount || 0;
-    const contentJson = escapeJsonScript(JSON.stringify(content));
-    
-    return `<!DOCTYPE html>
+async function serveMarkdown(env, slug, headOnly) {
+    const markdown = await readNoteMarkdown(env, slug);
+    if (markdown === null) return notFound();
+
+    return new Response(headOnly ? null : markdown, {
+        headers: {
+            "Content-Type": "text/markdown; charset=utf-8",
+            "Content-Disposition": `inline; filename="${slug}.md"`,
+            "Cache-Control": "public, max-age=300",
+            "X-Content-Type-Options": "nosniff"
+        }
+    });
+}
+
+function serveNote(note) {
+    return new Response(generateNoteHtml(note), {
+        headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
+            "Content-Security-Policy": [
+                "default-src 'self'",
+                `script-src 'self' ${new URL(MARKED_SCRIPT).origin}`,
+                `style-src 'self' ${new URL(FONT_STYLESHEET).origin}`,
+                `font-src 'self' ${new URL(FONT_STYLESHEET).origin} data:`,
+                "img-src 'self' https: data:",
+                "connect-src 'self'",
+                "object-src 'none'",
+                "base-uri 'none'",
+                "frame-ancestors 'none'"
+            ].join("; "),
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "X-Content-Type-Options": "nosniff"
+        }
+    });
+}
+
+function generateNoteHtml(note) {
+    const title = note.title || "便签预览";
+    const createdAt = formatDate(note.createdAt);
+    const markdownPath = `/${encodeURIComponent(note.slug)}.md`;
+
+    return `<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(title)} - SLink 便签</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>${escapeHtml(title)} - SLink</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://registry.npmmirror.com" crossorigin>
-    <link rel="stylesheet" href="https://registry.npmmirror.com/lxgw-wenkai-screen-web/latest/files/lxgwwenkaiscreen/result.css">
-    <link rel="stylesheet" href="/assets/note.css">
-    <script src="/assets/note.js" defer></script>
+    <link rel="stylesheet" href="${FONT_STYLESHEET}">
+    <link rel="stylesheet" href="/assets/css/note.css">
+    <script src="${MARKED_SCRIPT}" integrity="sha384-KwzR5her+zXi/Bzz4PVrBjkrjsBZy9adZtt3jA6Jgj3/hzPihRUV6HqMONpTe7Ll" crossorigin="anonymous" defer></script>
+    <script src="${PURIFY_SCRIPT}" integrity="sha384-80VlBZnyAwkkqtSfg5NhPyZff6nU4K/qniLBL8Jnm4KDv6jZhLiYtJbhglg/i9ww" crossorigin="anonymous" defer></script>
+    <script type="module" src="/assets/js/note.js"></script>
 </head>
-<body class="note-preview">
-    <header class="note-site-header note-width">
-        <h1 class="note-title">${escapeHtml(title)}</h1>
+<body>
+    <header class="site-header page-width">
+        <a class="brand" href="/">SLink</a>
+        <h1>${escapeHtml(title)}</h1>
         <div class="note-meta">
-            <span>${createdAt}</span>
-            <span>${viewCount} 次查看</span>
+            <time datetime="${escapeHtml(note.createdAt)}">${escapeHtml(createdAt)}</time>
         </div>
     </header>
 
-    <main class="note-paper note-width">
-        <article class="note-content" id="noteContent" aria-live="polite">
-            <p class="note-loading">正在加载正文</p>
+    <main class="note-shell page-width">
+        <article class="markdown" id="noteContent" data-source="${markdownPath}" aria-live="polite">
+            <p class="loading-state">正在加载正文...</p>
         </article>
-
-        <div class="note-actions">
-            <button class="action-btn primary" type="button" data-note-copy="content">复制内容</button>
-            <button class="action-btn" type="button" data-note-copy="url">复制链接</button>
-            <a href="/" class="action-btn">创建新便签</a>
-        </div>
+        <footer class="note-actions">
+            <button class="action primary" type="button" data-copy="content">复制 Markdown</button>
+            <button class="action" type="button" data-copy="url">复制链接</button>
+            <a class="action" href="${markdownPath}" download>下载 .md</a>
+            <a class="action" href="/">创建新便签</a>
+        </footer>
     </main>
 
-    <div id="copyNotification" class="copy-notification">
-        已复制到剪贴板
-    </div>
-
-    <script type="application/json" id="noteSource">${contentJson}</script>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>`;
 }
 
-function escapeJsonScript(json) {
-    return json
-        .replace(/&/g, '\\u0026')
-        .replace(/</g, '\\u003C')
-        .replace(/>/g, '\\u003E')
-        .replace(/\u2028/g, '\\u2028')
-        .replace(/\u2029/g, '\\u2029');
+function formatDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "未知时间";
+    return new Intl.DateTimeFormat("zh-CN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Asia/Shanghai"
+    }).format(date);
 }
 
-function escapeHtml(text) {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+function notFound() {
+    return new Response("未找到该短链或便签", {
+        status: 404,
+        headers: { "Content-Type": "text/plain; charset=utf-8" }
+    });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }

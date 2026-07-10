@@ -1,10 +1,8 @@
 name = "slink"
 compatibility_date = "2024-01-01"
 
-# Pages configuration
 pages_build_output_dir = "."
 
-# KV namespaces
 [[kv_namespaces]]
 binding = "SLINK_KV"
 id = "611bc46cbdf7421c94e4fe8dac213bf9"
