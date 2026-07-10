@@ -41,7 +41,8 @@
                 <form id="noteForm" novalidate>
                     <div class="input-group">
                         <input id="noteTitle" type="text" maxlength="160" autocomplete="off" placeholder="便签标题 (可选)" aria-label="便签标题">
-                        <textarea id="noteContent" rows="8" maxlength="500000" placeholder="支持 Markdown 格式&#10;&#10;例如：&#10;# 标题&#10;**粗体文字**&#10;- 列表项" aria-label="Markdown 正文" required></textarea>
+                        <input id="noteCustomSlug" type="text" autocomplete="off" maxlength="64" pattern="[A-Za-z0-9_-]+" placeholder="自定义短码 (可选)" aria-label="便签自定义短码">
+                        <textarea id="noteContent" rows="8" maxlength="500000" placeholder="支持 Markdown 格式" aria-label="Markdown 正文" required></textarea>
                         <button id="noteButton" type="submit">
                             <span data-label>创建便签</span>
                             <span data-loading hidden>创建中...</span>
@@ -57,10 +58,6 @@
                         <input id="resultUrl" type="text" readonly aria-label="生成的地址">
                         <button id="copyButton" class="copy-button" type="button">复制</button>
                     </div>
-                </div>
-                <div class="result-item">
-                    <label>详情:</label>
-                    <div class="result-detail" id="resultDetail"></div>
                 </div>
                 <div class="result-item">
                     <label>创建时间:</label>

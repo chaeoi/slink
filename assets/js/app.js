@@ -14,6 +14,7 @@ const elements = {
     originalUrl: requiredElement("originalUrl"),
     customSlug: requiredElement("customSlug"),
     noteTitle: requiredElement("noteTitle"),
+    noteCustomSlug: requiredElement("noteCustomSlug"),
     noteContent: requiredElement("noteContent"),
     shortenButton: requiredElement("shortenButton"),
     noteButton: requiredElement("noteButton"),
@@ -21,7 +22,6 @@ const elements = {
     resultTitle: requiredElement("resultTitle"),
     resultTime: requiredElement("resultTime"),
     resultUrl: requiredElement("resultUrl"),
-    resultDetail: requiredElement("resultDetail"),
     copyButton: requiredElement("copyButton"),
     error: requiredElement("errorMessage")
 };
@@ -48,7 +48,6 @@ elements.shortenForm.addEventListener("submit", async (event) => {
         showResult({
             title: "短链地址:",
             url: data.shortUrl,
-            detail: data.originalUrl,
             createdAt: data.createdAt
         });
     });
@@ -57,6 +56,7 @@ elements.shortenForm.addEventListener("submit", async (event) => {
 elements.noteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const title = elements.noteTitle.value.trim();
+    const customSlug = elements.noteCustomSlug.value.trim();
     const content = elements.noteContent.value.trim();
 
     if (!content) {
@@ -65,11 +65,14 @@ elements.noteForm.addEventListener("submit", async (event) => {
         return;
     }
 
-    await submit(elements.noteButton, "/note", { title, content }, (data) => {
+    await submit(elements.noteButton, "/note", {
+        title,
+        customSlug: customSlug || undefined,
+        content
+    }, (data) => {
         showResult({
             title: "便签地址:",
             url: data.noteUrl,
-            detail: `原始文件：${data.markdownUrl}`,
             createdAt: data.createdAt
         });
     });
@@ -125,10 +128,9 @@ function activateTab(name) {
     hideFeedback();
 }
 
-function showResult({ title, url, detail, createdAt }) {
+function showResult({ title, url, createdAt }) {
     elements.resultTitle.textContent = title;
     elements.resultUrl.value = url;
-    elements.resultDetail.textContent = detail;
     elements.resultTime.textContent = formatDate(createdAt);
     elements.result.hidden = false;
     elements.error.hidden = true;

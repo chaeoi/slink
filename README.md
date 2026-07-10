@@ -109,20 +109,21 @@ Content-Type: application/json
 ```json
 {
   "title": "部署记录",
+  "customSlug": "deploy-notes",
   "content": "# 标题\n\nMarkdown 正文"
 }
 ```
 
-标题最多 160 个字符，正文最多 500,000 个字符。
+`customSlug` 可省略，与短链接共用短码命名空间。标题最多 160 个字符，正文最多 500,000 个字符。
 
 ```json
 {
   "success": true,
-  "slug": "a1b2",
+  "slug": "deploy-notes",
   "title": "部署记录",
   "createdAt": "2026-07-11T08:00:00.000Z",
-  "noteUrl": "https://slink.canghai.org/a1b2",
-  "markdownUrl": "https://slink.canghai.org/a1b2.md"
+  "noteUrl": "https://slink.canghai.org/deploy-notes",
+  "markdownUrl": "https://slink.canghai.org/deploy-notes.md"
 }
 ```
 

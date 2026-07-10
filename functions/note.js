@@ -1,5 +1,5 @@
 import { handleError, HttpError, json, methodNotAllowed, readJson } from "./_lib/http.js";
-import { createUniqueSlug } from "./_lib/slug.js";
+import { createUniqueSlug, validateCustomSlug } from "./_lib/slug.js";
 import { slugExists, writeNote } from "./_lib/storage.js";
 
 const MAX_TITLE_LENGTH = 160;
@@ -28,7 +28,13 @@ async function createNote({ request, env }) {
             throw new HttpError(400, "便签标题不能超过 160 个字符");
         }
 
-        const slug = await createUniqueSlug((candidate) => slugExists(env, candidate));
+        const slug = body.customSlug
+            ? validateCustomSlug(body.customSlug)
+            : await createUniqueSlug((candidate) => slugExists(env, candidate));
+
+        if (await slugExists(env, slug)) {
+            throw new HttpError(409, "该短码已被使用");
+        }
         const note = {
             slug,
             title,

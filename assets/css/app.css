@@ -244,7 +244,6 @@ textarea:focus-visible {
     background: #0891b2;
 }
 
-.result-detail,
 .result-time {
     padding: 10px 12px;
     border: 1px solid var(--border);
@@ -252,7 +251,6 @@ textarea:focus-visible {
     background: var(--surface);
     color: var(--text-muted);
     font-size: 13px;
-    overflow-wrap: anywhere;
 }
 
 .error-message {
