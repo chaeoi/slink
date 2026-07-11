@@ -28,13 +28,16 @@ async function createNote({ request, env }) {
             throw new HttpError(400, "便签标题不能超过 160 个字符");
         }
 
-        const slug = body.customSlug
-            ? validateCustomSlug(body.customSlug)
-            : await createUniqueSlug((candidate) => slugExists(env, candidate));
-
-        if (await slugExists(env, slug)) {
-            throw new HttpError(409, "该短码已被使用");
+        let slug;
+        if (body.customSlug) {
+            slug = validateCustomSlug(body.customSlug);
+            if (await slugExists(env, slug)) {
+                throw new HttpError(409, "该短码已被使用");
+            }
+        } else {
+            slug = await createUniqueSlug((candidate) => slugExists(env, candidate));
         }
+
         const note = {
             slug,
             title,

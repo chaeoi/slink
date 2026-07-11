@@ -26,7 +26,8 @@ export async function readNote(env, slug) {
     return {
         slug,
         title: result.metadata?.title || "",
-        createdAt: result.metadata?.createdAt || ""
+        createdAt: result.metadata?.createdAt || "",
+        markdown: result.value
     };
 }
 

@@ -35,10 +35,10 @@ const HIGHLIGHT_RULES = {
 
 initialize();
 
-async function initialize() {
+function initialize() {
     try {
         assertRendererDependencies();
-        rawMarkdown = await fetchMarkdown(content.dataset.source);
+        rawMarkdown = readInlineMarkdown();
         const rendered = window.marked.parse(rawMarkdown, {
             gfm: true,
             breaks: false
@@ -54,11 +54,10 @@ async function initialize() {
     }
 }
 
-async function fetchMarkdown(source) {
-    if (!source) throw new Error("页面没有指定 Markdown 地址");
-    const response = await fetch(source, { cache: "no-cache" });
-    if (!response.ok) throw new Error(`无法读取 Markdown（HTTP ${response.status}）`);
-    return response.text();
+function readInlineMarkdown() {
+    const holder = document.getElementById("noteData");
+    if (!holder) throw new Error("页面没有内嵌 Markdown 数据");
+    return String(JSON.parse(holder.textContent).markdown ?? "");
 }
 
 function assertRendererDependencies() {
@@ -190,7 +189,7 @@ function highlightCode(code, language) {
         for (const rule of rules) {
             rule.expression.lastIndex = index;
             const candidate = rule.expression.exec(code);
-            if (candidate?.index === index && candidate[0]) {
+            if (candidate?.[0]) {
                 token = candidate[0];
                 tokenClass = rule.className;
                 break;

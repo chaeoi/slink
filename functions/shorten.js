@@ -15,12 +15,15 @@ async function createShortUrl({ request, env }) {
     try {
         const body = await readJson(request);
         const originalUrl = normalizeHttpUrl(body.url);
-        const slug = body.customSlug
-            ? validateCustomSlug(body.customSlug)
-            : await createUniqueSlug((candidate) => slugExists(env, candidate));
 
-        if (await slugExists(env, slug)) {
-            throw new HttpError(409, "该短码已被使用");
+        let slug;
+        if (body.customSlug) {
+            slug = validateCustomSlug(body.customSlug);
+            if (await slugExists(env, slug)) {
+                throw new HttpError(409, "该短码已被使用");
+            }
+        } else {
+            slug = await createUniqueSlug((candidate) => slugExists(env, candidate));
         }
 
         const createdAt = new Date().toISOString();

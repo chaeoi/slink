@@ -53,7 +53,8 @@ export function formatDate(value) {
     if (Number.isNaN(date.getTime())) return "";
     return new Intl.DateTimeFormat("zh-CN", {
         dateStyle: "medium",
-        timeStyle: "short"
+        timeStyle: "short",
+        timeZone: "Asia/Shanghai"
     }).format(date);
 }
 
