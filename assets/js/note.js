@@ -5,10 +5,18 @@ const toast = requiredElement("toast");
 let rawMarkdown = "";
 let toastTimer = null;
 
+const HTML_ESCAPES = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+};
+const SHELL_RULES = shellRules();
 const HIGHLIGHT_RULES = {
-    bash: shellRules(),
-    sh: shellRules(),
-    shell: shellRules(),
+    bash: SHELL_RULES,
+    sh: SHELL_RULES,
+    shell: SHELL_RULES,
     json: [
         { className: "property", expression: /"(?:\\.|[^"\\])*"(?=\s*:)/y },
         { className: "string", expression: /"(?:\\.|[^"\\])*"/y },
@@ -175,26 +183,31 @@ function highlightCode(code, language) {
 
     let output = "";
     let index = 0;
+    let plainStart = 0;
     while (index < code.length) {
-        let match = null;
+        let token = "";
+        let tokenClass = "";
         for (const rule of rules) {
             rule.expression.lastIndex = index;
             const candidate = rule.expression.exec(code);
             if (candidate?.index === index && candidate[0]) {
-                match = { rule, value: candidate[0] };
+                token = candidate[0];
+                tokenClass = rule.className;
                 break;
             }
         }
 
-        if (match) {
-            output += `<span class="token-${match.rule.className}">${escapeHtml(match.value)}</span>`;
-            index += match.value.length;
-        } else {
-            output += escapeHtml(code[index]);
+        if (!token) {
             index += 1;
+            continue;
         }
+
+        output += escapeHtml(code.slice(plainStart, index));
+        output += `<span class="token-${tokenClass}">${escapeHtml(token)}</span>`;
+        index += token.length;
+        plainStart = index;
     }
-    return output;
+    return output + escapeHtml(code.slice(plainStart));
 }
 
 function shellRules() {
@@ -219,10 +232,5 @@ function slugify(value) {
 }
 
 function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+    return String(value).replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
 }

@@ -88,6 +88,8 @@ function generateNoteHtml(note) {
     const title = note.title || "便签预览";
     const createdAt = formatDate(note.createdAt);
     const markdownPath = `/${encodeURIComponent(note.slug)}.md`;
+    const escapedTitle = escapeHtml(title);
+    const escapedCreatedAt = escapeHtml(note.createdAt);
 
     return `<!doctype html>
 <html lang="zh-CN">
@@ -95,7 +97,7 @@ function generateNoteHtml(note) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>${escapeHtml(title)} - SLink</title>
+    <title>${escapedTitle} - SLink</title>
     <link rel="icon" type="image/svg+xml" href="${FAVICON_HREF}">
     <link rel="preconnect" href="https://registry.npmmirror.com" crossorigin>
     <link rel="stylesheet" href="${FONT_STYLESHEET}">
@@ -106,9 +108,9 @@ function generateNoteHtml(note) {
 </head>
 <body>
     <header class="site-header page-width">
-        <h1>${escapeHtml(title)}</h1>
+        <h1>${escapedTitle}</h1>
         <div class="note-meta">
-            <time datetime="${escapeHtml(note.createdAt)}">${escapeHtml(createdAt)}</time>
+            <time datetime="${escapedCreatedAt}">${escapeHtml(createdAt)}</time>
         </div>
     </header>
 

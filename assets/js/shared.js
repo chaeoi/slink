@@ -19,8 +19,12 @@ export async function requestJson(url, options) {
 
 export async function copyText(text) {
     if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return;
+        try {
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch {
+            // Fall through when clipboard permission is denied.
+        }
     }
 
     const textarea = document.createElement("textarea");

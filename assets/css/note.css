@@ -27,6 +27,8 @@
 html {
     min-width: 320px;
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 body {
@@ -281,6 +283,7 @@ textarea {
 }
 
 .copy-code {
+    display: none;
     position: absolute;
     top: 8px;
     right: 8px;
@@ -295,14 +298,11 @@ textarea {
     cursor: pointer;
     font-size: 12px;
     line-height: 1;
-    opacity: 0;
-    transition: opacity .15s ease, color .15s ease, border-color .15s ease;
+    transition: color .15s ease, border-color .15s ease;
 }
 
-.code-block:hover .copy-code,
-.copy-code:focus-visible,
-.copy-code.copied {
-    opacity: 1;
+.code-block:hover .copy-code {
+    display: block;
 }
 
 .copy-code:hover {
@@ -447,12 +447,6 @@ textarea {
 .toast.show {
     opacity: 1;
     transform: translateY(0);
-}
-
-@media (hover: none) {
-    .copy-code {
-        opacity: .9;
-    }
 }
 
 @media (max-width: 640px) {
