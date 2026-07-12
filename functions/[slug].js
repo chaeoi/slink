@@ -25,15 +25,15 @@ export async function onRequest(context) {
 
     try {
         if (markdownRequest) {
-            return serveMarkdown(context.env, slug, context.request.method === "HEAD");
+            return serveMarkdown(context, slug, context.request.method === "HEAD");
         }
 
-        const note = await readNote(context.env, slug);
+        const note = await readNote(context.env, slug, context);
         if (note) {
             return serveNote(note);
         }
 
-        const link = await readUrl(context.env, slug);
+        const link = await readUrl(context.env, slug, context);
         if (link) {
             return new Response(null, {
                 status: 302,
@@ -54,8 +54,8 @@ export async function onRequest(context) {
     }
 }
 
-async function serveMarkdown(env, slug, headOnly) {
-    const markdown = await readNoteMarkdown(env, slug);
+async function serveMarkdown(context, slug, headOnly) {
+    const markdown = await readNoteMarkdown(context.env, slug, context);
     if (markdown === null) return notFound();
 
     return new Response(headOnly ? null : markdown, {
