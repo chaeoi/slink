@@ -1,4 +1,5 @@
 import { HttpError } from "./http.js";
+import { slugExists } from "./storage.js";
 
 export const SLUG_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -18,6 +19,18 @@ export function validateCustomSlug(value) {
         throw new HttpError(400, "该短码为系统保留字，请换一个");
     }
     return slug;
+}
+
+// 分配短码：给定自定义短码时校验并查重，否则生成随机唯一短码。
+export async function allocateSlug(env, customSlug) {
+    if (customSlug) {
+        const slug = validateCustomSlug(customSlug);
+        if (await slugExists(env, slug)) {
+            throw new HttpError(409, "该短码已被使用");
+        }
+        return slug;
+    }
+    return createUniqueSlug((candidate) => slugExists(env, candidate));
 }
 
 export async function createUniqueSlug(isTaken, length = 4, maxAttempts = 12) {

@@ -1,6 +1,6 @@
 import { handleError, HttpError, json, methodNotAllowed, readJson } from "./_lib/http.js";
-import { createUniqueSlug, validateCustomSlug } from "./_lib/slug.js";
-import { slugExists, writeUrl } from "./_lib/storage.js";
+import { allocateSlug } from "./_lib/slug.js";
+import { writeUrl } from "./_lib/storage.js";
 
 const MAX_URL_LENGTH = 8192;
 
@@ -16,16 +16,7 @@ async function createShortUrl({ request, env }) {
         const body = await readJson(request);
         const originalUrl = normalizeHttpUrl(body.url);
 
-        let slug;
-        if (body.customSlug) {
-            slug = validateCustomSlug(body.customSlug);
-            if (await slugExists(env, slug)) {
-                throw new HttpError(409, "该短码已被使用");
-            }
-        } else {
-            slug = await createUniqueSlug((candidate) => slugExists(env, candidate));
-        }
-
+        const slug = await allocateSlug(env, body.customSlug);
         const createdAt = new Date().toISOString();
         await writeUrl(env, slug, originalUrl);
 

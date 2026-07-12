@@ -28,7 +28,7 @@ Pages Functions
   └── Workers KV
 ```
 
-便签预览页不嵌入正文。浏览器打开 `/{slug}` 后，再请求 `/{slug}.md` 并在前端完成 Markdown 渲染。
+便签预览页将 Markdown 原文以内嵌 JSON 的形式随页面下发，浏览器端由 `marked` 和 `DOMPurify` 完成渲染，无需再次请求 `/{slug}.md`。`.md` 地址用于查看和下载原文。
 
 ## 数据模型
 
@@ -60,15 +60,33 @@ value: 原始 Markdown
 ```text
 .
 ├── assets/
-│   ├── css/                页面样式
-│   └── js/                 浏览器端代码
+│   ├── css/
+│   │   ├── app.css         首页与 404 页样式
+│   │   └── note.css        便签预览页样式
+│   └── js/
+│       ├── app.js          首页交互（表单提交、标签页、结果展示）
+│       ├── note.js         便签预览页（渲染、DOM 增强、复制）
+│       ├── highlight.js    代码块语法高亮
+│       └── shared.js       浏览器端公共工具（请求、复制、日期）
 ├── functions/
-│   ├── _lib/               服务端公共模块
-│   ├── [slug].js           动态路由
-│   ├── note.js             便签接口
-│   └── shorten.js          短链接口
+│   ├── _lib/
+│   │   ├── http.js         JSON 响应、错误处理、HttpError
+│   │   ├── slug.js         短码校验、保留字、分配
+│   │   ├── storage.js      KV 读写与自动续期
+│   │   └── render.js       便签页 / 404 页 HTML 模板与响应
+│   ├── [slug].js           动态路由（跳转、便签页、.md）
+│   ├── note.js             便签接口 POST /note
+│   └── shorten.js          短链接口 POST /shorten
 ├── index.html
 └── wrangler.toml
+```
+
+调用关系：
+
+```text
+shorten.js / note.js ──> http.js + slug.js ──> storage.js ──> KV
+[slug].js ──> slug.js + storage.js + render.js
+app.js ──> shared.js          note.js ──> shared.js + highlight.js
 ```
 
 ## API
