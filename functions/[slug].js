@@ -155,10 +155,86 @@ function formatDate(value) {
 }
 
 function notFound() {
-    return new Response("未找到该短链或便签", {
+    return new Response(generateNotFoundHtml(), {
         status: 404,
-        headers: { "Content-Type": "text/plain; charset=utf-8" }
+        headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "X-Content-Type-Options": "nosniff"
+        }
     });
+}
+
+function generateNotFoundHtml() {
+    return `<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>未找到该短链或便签 - SLink</title>
+    <link rel="icon" type="image/svg+xml" href="${FAVICON_HREF}">
+    <link rel="preconnect" href="https://registry.npmmirror.com" crossorigin>
+    <link rel="stylesheet" href="${FONT_STYLESHEET}">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <style>
+        .not-found {
+            padding: 36px 24px 40px;
+            text-align: center;
+        }
+
+        .not-found .status-code {
+            color: var(--primary);
+            font-size: 64px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .not-found h2 {
+            margin: 16px 0 8px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .not-found .hint {
+            margin-bottom: 28px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .not-found .home-button {
+            display: inline-block;
+            padding: 12px 28px;
+            border-radius: 8px;
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background .2s ease, transform .2s ease;
+        }
+
+        .not-found .home-button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <h1>🔗 SLink</h1>
+        </header>
+        <main class="not-found">
+            <p class="status-code">404</p>
+            <h2>未找到该短链或便签</h2>
+            <p class="hint">它可能已过期、被删除，或者地址输入有误。</p>
+            <a class="home-button" href="/">返回首页</a>
+        </main>
+    </div>
+</body>
+</html>`;
 }
 
 function escapeHtml(value) {
