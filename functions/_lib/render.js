@@ -86,7 +86,7 @@ function noteHtml(note) {
             <p class="loading-state">正在加载正文...</p>
         </article>
         <footer class="note-actions">
-            <button class="action primary" type="button" data-copy="content">复制 Markdown</button>
+            <button class="action primary" type="button" data-copy="content">复制原文</button>
             <button class="action" type="button" data-copy="url">复制链接</button>
             <a class="action" href="${markdownPath}" download>下载便签</a>
             <a class="action" href="/">创建新便签</a>

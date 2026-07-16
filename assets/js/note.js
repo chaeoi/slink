@@ -120,7 +120,7 @@ function bindActions() {
         const action = event.target.closest("[data-copy]");
         if (!action) return;
         const text = action.dataset.copy === "content" ? rawMarkdown : window.location.href;
-        await copyWithFeedback(text, action.dataset.copy === "content" ? "Markdown 已复制" : "链接已复制");
+        await copyWithFeedback(text, action.dataset.copy === "content" ? "原文已复制" : "链接已复制");
     });
 }
 
