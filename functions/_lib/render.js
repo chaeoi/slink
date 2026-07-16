@@ -9,6 +9,7 @@ export function notePage(note) {
         headers: {
             "Content-Type": "text/html; charset=utf-8",
             "Cache-Control": "public, max-age=300",
+            "Vary": "Accept",
             "Content-Security-Policy": [
                 "default-src 'self'",
                 `script-src 'self' ${new URL(MARKED_SCRIPT).origin}`,
@@ -21,6 +22,18 @@ export function notePage(note) {
                 "frame-ancestors 'none'"
             ].join("; "),
             "Referrer-Policy": "strict-origin-when-cross-origin",
+            "X-Content-Type-Options": "nosniff"
+        }
+    });
+}
+
+// 同一 URL 按 Accept 头返回 HTML 或原文，必须带 Vary: Accept 防止缓存串型。
+export function plainTextFile(markdown, headOnly) {
+    return new Response(headOnly ? null : markdown, {
+        headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "public, max-age=300",
+            "Vary": "Accept",
             "X-Content-Type-Options": "nosniff"
         }
     });

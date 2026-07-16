@@ -1,5 +1,5 @@
 import { SLUG_PATTERN } from "./_lib/slug.js";
-import { markdownFile, notFoundPage, notePage } from "./_lib/render.js";
+import { markdownFile, notFoundPage, notePage, plainTextFile } from "./_lib/render.js";
 import {
     readNoteMarkdown,
     readNote,
@@ -28,7 +28,13 @@ export async function onRequest(context) {
 
         const note = await readNote(context.env, slug, context);
         if (note) {
-            return notePage(note);
+            // 浏览器请求显示预览页；curl/wget 等不声明 text/html 的客户端直接拿原文，
+            // 因此便签地址本身就是可 `curl | bash` 的直链。
+            const acceptsHtml = (context.request.headers.get("Accept") || "").includes("text/html");
+            if (acceptsHtml) {
+                return notePage(note);
+            }
+            return plainTextFile(note.markdown, context.request.method === "HEAD");
         }
 
         const link = await readUrl(context.env, slug, context);
